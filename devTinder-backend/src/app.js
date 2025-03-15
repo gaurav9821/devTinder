@@ -15,7 +15,9 @@ const app = express();
 //   res.send("Welcome to the DEVTINDER Backend");
 // });
 
-// ============API CALLS================
+
+
+// ==================API CALLS=============================
 
 //If i use below code here so it will always give response as HAHAHA for all user apis
 //This happens because of order in which route written:
@@ -25,6 +27,7 @@ app.use("/user", (req, res) => {
 });
 */
 
+/*
 //GET
 app.get("/user", (req, res) => {
   console.log("INSIDE GET USER API");
@@ -51,7 +54,40 @@ app.patch("/user", (req, res) => {
   res.send("PATCH API");
 });
 
+*/
+
+// ==================REGULAR EXPRESSION IN ROUTES=============================
+
+
+
+// ==================DYNAMIC ROUTES (QUERY AND REQUEST PARAMS)=============================
+
+//Below is for Handling query Params
+//For url http://localhost:3000/user?userId=101 ---> { userId: '101' }
+// For url http://localhost:3000/user?userId=101&name=Gaurav&password=testing --->{ userId: '101', name: 'Gaurav', password: 'testing' }
+app.get("/user",(req,res)=>{
+  //This will print query params pass in request
+  console.log(req.query); 
+  res.send("The value of query param is "+JSON.stringify(req.query));
+})
+
+//Request Params (Dynamic Routing)
+//For url http://localhost:3000/profile/101 ---> { profileId: '101' }
+app.get("/profile/:profileId", (req, res) => {
+  //This will print request params pass in request
+  console.log(req.params);
+  res.send("The value of request param is " + JSON.stringify(req.params));
+});
+//For url http://localhost:3000/profile/101/Gaurav/testing --->{ profileId: '101', name: 'Gaurav', password: 'testing' }
+app.get("/profile/:profileId/:name/:password", (req, res) => {
+  //This will print request params pass in request
+  console.log(req.params);
+  res.send("The value of request param is " + JSON.stringify(req.params));
+});
+
 // // Start the server
 app.listen(3000, () => {
   console.log("Server is running on http://localhost:3000");
 });
+
+
