@@ -203,6 +203,7 @@ app.get("/admin/deleteAllData", (req, res) => {
 });
 */
 
+/*
 const {adminAuth,userAuth} = require("./middlewares/auth");
 app.use("/admin",adminAuth);
 // app.use("/users",userAuth);
@@ -228,6 +229,30 @@ app.get("/admin/deleteAllData", (req, res) => {
 // app.get("/users/deleteAllData", (req, res) => {
 //   res.send("Delete All User Data");
 // });
+
+*/
+// ===================ERROR HANDLING=================
+
+//Best way is Try and catch
+app.get("/getUserData",(req,res)=>{
+  try{
+    throw new Error("Error is thrown manually")
+  }
+  catch(err){
+    res.status(500).send("Something went wrong bcz ---> "+err.name+ " : "+err.message);
+  }
+})
+
+//If you want to handle any error which can occur so add below code in end of your code means this route code should be 
+//the last one
+
+app.use("/",(err,req,res,next)=>{
+  if(err){
+    res.status(500).send("Something went wrong....")  
+  }
+})
+
+
 
 
 // // Start the server
