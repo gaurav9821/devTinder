@@ -179,6 +179,55 @@ app.use(
 );
  */
 
+//===============WRITING MIDDLEWARES LIKE (ADMINAUTHMIDDLEWARE,USERAUTHMIDDLEWARE)=============
+
+/*
+app.get("/admin/getAllData",(req,res)=>{
+  const token = "abcd";
+  const isAdminAuthorized = token === "abcde";
+  if (isAdminAuthorized) {
+    res.send("Get All admin Data");
+  } else {
+    res.status(401).send("Not Autorized");
+  }
+});
+
+app.get("/admin/deleteAllData", (req, res) => {
+  const token = "abcd";
+  const isAdminAuthorized = token === "abcd";
+  if (isAdminAuthorized) {
+    res.send("Delete All admin Data");
+  } else {
+    res.status(401).send("Not Autorized");
+  }
+});
+*/
+
+const {adminAuth,userAuth} = require("./middlewares/auth");
+app.use("/admin",adminAuth);
+// app.use("/users",userAuth);
+
+//If only 1 /users route API so can be written like
+app.use("/users", userAuth,(req,res)=>res.send("USer data sent"));
+
+//ADMIN APIs
+app.get("/admin/getAllData", (req, res) => {
+  res.send("Get All admin Data");
+});
+
+app.get("/admin/deleteAllData", (req, res) => {
+  res.send("Delete All admin Data");
+
+});
+
+//USER APIs
+// app.get("/users/getAllData", (req, res) => {
+//   res.send("Get All User Data");
+// });
+
+// app.get("/users/deleteAllData", (req, res) => {
+//   res.send("Delete All User Data");
+// });
 
 
 // // Start the server
