@@ -1,10 +1,15 @@
 const express = require("express");
+// VERY IMPORTANT:
+//ALWAYS CONNECT DB BEFORE STARTING THE SERVER
+const { connectDb } = require("./config/database");
+const { UserModel } = require("./models/users");
+
 const app = express();
 
 //USING app.use
-// Order of code matters because if I put route of '/' first then it will always execute "Welcome to the DEVTINDER Backend" 
-// for every route bcz it act as wildcard and matches with all route and code flows from top to bottom so when server comes to 
-//execute code for any route it matches with '/' because every route start with '/' and that is always send "Welcome to the DEVTINDER Backend" 
+// Order of code matters because if I put route of '/' first then it will always execute "Welcome to the DEVTINDER Backend"
+// for every route bcz it act as wildcard and matches with all route and code flows from top to bottom so when server comes to
+//execute code for any route it matches with '/' because every route start with '/' and that is always send "Welcome to the DEVTINDER Backend"
 // even for /hello or /test if not handled properly
 
 // app.use("/hello", (req, res) => {
@@ -18,8 +23,6 @@ const app = express();
 // app.use("/",(req, res) => {
 //   res.send("Welcome to the DEVTINDER Backend");
 // });
-
-
 
 // ==================API CALLS=============================
 
@@ -62,8 +65,6 @@ app.patch("/user", (req, res) => {
 
 // ==================REGULAR EXPRESSION IN ROUTES=============================
 
-
-
 // ==================DYNAMIC ROUTES (QUERY AND REQUEST PARAMS)=============================
 /*
 //Below is for Handling query Params
@@ -91,23 +92,22 @@ app.get("/profile/:profileId/:name/:password", (req, res) => {
 
 */
 
-
 // ======================MiddleWare and Error Handlers=============================
 
 //This code will go to infinite loop because we are not sending any response from the route handlers
 // and as we are using app.use it will go infinite loop for all type of HTTTP method like GET,POST,PUt etc with route as /users
 //  output ---> Server-Console --> Handling Request
-//              Postman ---> Infiite Loop   
-  /*             
+//              Postman ---> Infiite Loop
+/*             
 app.use("/users",(req,res)=>{
   console.log("Handling Request");
 })
   */
 
-//To fix above we use 
+//To fix above we use
 //  output ---> Server-Console --> "Handling Request - 2"
 //              Postman ---> Response - 2
- /*
+/*
 app.use("/users", (req, res) => {
   console.log("Handling Request - 2");
   res.send("Response - 2");
@@ -118,7 +118,7 @@ app.use("/users", (req, res) => {
 //              Postman ---> Response - 1
 //              Server-Console(with Comment) --> "Handling Request - 1"
 //              Postman ---> Infinite Loop
- /*
+/*
 app.use("/users",(req,res)=>{
   console.log("Handling Request - 1");
   //res.send("Response - 1");
@@ -138,7 +138,7 @@ app.use("/users",(req,res)=>{
 
 //              Server-Console(with Comment) --> "Handling Request - 1", "Handling Request - 2"
 //              Postman ---> Response - 2
- /*
+/*
 app.use("/users",(req,res,next)=>{
   console.log("Handling Request - 1");
   // res.send("Response - 1");
@@ -153,7 +153,7 @@ app.use("/users",(req,res,next)=>{
 // ====================== HANDLE MULTIPLE ROUTE HANDLERS =======================
 // The RH(Request/Route Handler) send the response is known as Response handler and othe Rh which we go through one by one
 // they are known as Middleware Functions
- /*
+/*
 app.use(
   "/",
   (req, res, next) => {
@@ -233,6 +233,7 @@ app.get("/admin/deleteAllData", (req, res) => {
 */
 // ===================ERROR HANDLING=================
 
+/*
 //Best way is Try and catch
 app.get("/getUserData",(req,res)=>{
   try{
@@ -251,13 +252,34 @@ app.use("/",(err,req,res,next)=>{
     res.status(500).send("Something went wrong....")  
   }
 })
+*/
 
+connectDb()
+  .then((res, rej) => {
+    console.log("DB Connected Successfully!!!!!");
+    app.listen(3000, () => {
+      console.log("Application started at Port 3000...");
+    });
+  })
+  .catch((err) => {
+    console.log("DB Connection Failed " + err.message);
+  });
 
-
-
-// // Start the server
-app.listen(3000, () => {
-  console.log("Server is running on http://localhost:3000");
+app.post("/signup", async (req, res) => {
+  try {
+    const userObj = {
+      firstName: "Gaurav",
+      lastName: "CHachada",
+      phNo: "+91-8830610334",
+      age: 26,
+      emailId: "gaurav42stark@gmail.com",
+      password: "1234567890",
+      gender: "Males",
+    };
+    const newUser = new UserModel(userObj);
+    await newUser.save(userObj);
+    res.send("User Data Saved Successfully");
+  } catch (err) {
+    res.status(400).send("Error while saving Data :" + err.message);
+  }
 });
-
-
