@@ -1,5 +1,7 @@
 const { default: mongoose } = require("mongoose");
 
+const validator = require("validator");
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -29,6 +31,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       required: true,
       trim: true,
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Email Id is not Valid");
+        }
+      },
     },
     password: {
       type: String,
@@ -55,6 +62,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default:
         "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_hybrid&w=740",
+      validate(value) {
+        if (!validator.isURL(value)) {
+          throw new Error("Photo URL is not a Valid URL");
+        }
+      },
     },
     skills: {
       type: [String],
