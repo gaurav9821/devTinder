@@ -339,10 +339,35 @@ app.delete("/deleteUser",async(req,res)=>{
 })
 
 app.patch("/updateUser/:userId", async(req,res)=>{
-  const userId = req.params.userId;
+  const userId = req.params?.userId;
   const updatedToData = req.body;
   console.log(updatedToData);
-  try{
+  try {
+    //API LEVEL VALIDATION : ONLY SOME KEYS SHOULD BE ALLOWED TO GET UPDATED BY USER NOT ALL KEYS
+    // KEYS ALLOWED : "photoUrl", "age", "about", "gender", "skills"
+    // KEyS NOT ALLOWED : "firstName","lastName","emailId"
+    const ALLOWED_KEYS = [
+      "phNo",
+      "photoUrl",
+      "age",
+      "about",
+      "gender",
+      "skills",
+      "password",
+    ];
+
+    const isAllowed = Object.keys(updatedToData).every((k) => {
+      return ALLOWED_KEYS.includes(k);
+    });
+
+    if (!isAllowed) {
+      throw new Error("UPDATE NOTE ALLOWED");
+    }
+
+    if (updatedToData?.skills?.length > 10) {
+      throw new Error("YOU CAN ONLY ADD UPTO 10 skills");
+    }
+
     const beforeUpdatedData = await UserModel.findByIdAndUpdate(
       userId,
       updatedToData,
@@ -350,10 +375,9 @@ app.patch("/updateUser/:userId", async(req,res)=>{
     );
     console.log(beforeUpdatedData);
     res.send("User Data Updated Successfully");
-  }
-  catch(err){
+  } catch (err) {
     console.log(err.message);
-    res.status(400).send("Error while updating user data" + err.message);
+    res.status(400).send("Error while updating user data : " + err.message);
   }
 })
 

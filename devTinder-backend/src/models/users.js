@@ -38,10 +38,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       minLength: 4,
       maxLength: 6,
-      uppercase: true,
+      // uppercase: true,
       trim: true,
       validate(value) {
-        if (!["Male", "Female", "Others"].includes(value)) {
+        console.log(["Male", "Female", "Other"].includes(value));
+        if (!["Male", "Female", "Other"].includes(value)) {
           throw new Error("Wrong Gender Input");
         }
       },
