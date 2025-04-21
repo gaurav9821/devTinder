@@ -114,6 +114,7 @@ app.use("/users", (req, res) => {
 });
   */
 
+//One Rouute can have multiple route handlers
 // output ---> Server-Console(without Comment) --> "Handling Request - 1"
 //              Postman ---> Response - 1
 //              Server-Console(with Comment) --> "Handling Request - 1"
@@ -121,7 +122,7 @@ app.use("/users", (req, res) => {
 /*
 app.use("/users",(req,res)=>{
   console.log("Handling Request - 1");
-  //res.send("Response - 1");
+  //res.send("Response - 1"); //If we comment this line then it will go to infinite loop if not commented it send response to client
 },
 (req,res)=>{
   console.log("Handling Request - 2");
@@ -141,7 +142,7 @@ app.use("/users",(req,res)=>{
 /*
 app.use("/users",(req,res,next)=>{
   console.log("Handling Request - 1");
-  // res.send("Response - 1");
+  // res.send("Response - 1"); //If comment it will go to next Route handler and send Response - 2 and if not comment it will throw error
   next();
 },
 (req,res)=>{
@@ -254,6 +255,9 @@ app.use("/",(err,req,res,next)=>{
 })
 */
 
+// Convert every incoming JSON API request into JS object 
+app.use(express.json())
+
 connectDb()
   .then((res, rej) => {
     console.log("DB Connected Successfully!!!!!");
@@ -267,19 +271,85 @@ connectDb()
 
 app.post("/signup", async (req, res) => {
   try {
-    const userObj = {
-      firstName: "Gaurav",
-      lastName: "CHachada",
-      phNo: "+91-8830610334",
-      age: 26,
-      emailId: "gaurav42stark@gmail.com",
-      password: "1234567890",
-      gender: "Males",
-    };
-    const newUser = new UserModel(userObj);
-    await newUser.save(userObj);
+    // const userObj = {
+    //   firstName: "Shweta ",
+    //   lastName: "Shukla",
+    //   phNo: "+91-8788382247",
+    //   age: 27,
+    //   emailId: "shweta.shukla@gmail.com",
+    //   password: "gauravlovesshweta",
+    //   gender: "Female",
+    // };
+    // creating a new instance of USerModel and we have passed  data inside it
+    // const newUser = new UserModel(userObj);
+
+    console.log(req.body); 
+    //Adding data which we are adding in POstman while sending Request
+    const newUser = new UserModel(req.body);
+    await newUser.save();
     res.send("User Data Saved Successfully");
   } catch (err) {
     res.status(400).send("Error while saving Data :" + err.message);
   }
 });
+
+// Array of objects which have emailId as userEemailId
+app.get("/usersByEmail", async (req, res) => {
+  try {
+    const userEmailId = req.body.emailId;
+    const userDetailsByEmail = await UserModel.find({ emailId: userEmailId });
+    res.send(userDetailsByEmail);
+  } catch (err) {
+    res.status(400).send("Cannot get Data :" + err.message);
+  }
+});
+
+// First object which have emailId as userEemailId from DB
+app.get("/usersByEmailId", async (req, res) => {
+  try {
+    const userEmailId = req.body.emailId;
+    const userDetailsByEmail = await UserModel.findOne({ emailId: userEmailId });
+    res.send(userDetailsByEmail);
+  } catch (err) {
+    res.status(400).send("Cannot get Data :" + err.message);
+  }
+});
+
+// ALl documents from user collection
+app.get("/allUsers", async (req, res) => {
+  try {
+    const userEmailId = req.body.emailId;
+    const userDetailsByEmail = await UserModel.find({});
+    res.send(userDetailsByEmail);
+  } catch (err) {
+    res.status(400).send("Cannot get Data :" + err.message);
+  }
+});
+
+app.delete("/deleteUser",async(req,res)=>{
+  const userId = req.body.userId;
+  console.log(userId);
+  try{
+    await UserModel.findByIdAndDelete(userId);
+    res.send("User Deleted Successfully");
+  }
+  catch(err){
+    res.status(400).send("Error while deleting user data" + err.message);
+  }
+})
+
+app.patch("/updateUser/:userId", async(req,res)=>{
+  const userId = req.params.userId;
+  const updatedToData = req.body;
+  console.log(updatedToData);
+  try{
+    const beforeUpdatedData = await UserModel.findByIdAndUpdate(userId,updatedToData,{returnDocument:"before"});
+    console.log(beforeUpdatedData);
+    res.send("User Data Updated Successfully");
+  }
+  catch(err){
+    console.log(err.message);
+    res.status(400).send("Error while updating user data" + err.message);
+  }
+})
+
