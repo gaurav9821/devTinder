@@ -343,7 +343,11 @@ app.patch("/updateUser/:userId", async(req,res)=>{
   const updatedToData = req.body;
   console.log(updatedToData);
   try{
-    const beforeUpdatedData = await UserModel.findByIdAndUpdate(userId,updatedToData,{returnDocument:"before"});
+    const beforeUpdatedData = await UserModel.findByIdAndUpdate(
+      userId,
+      updatedToData,
+      { returnDocument: "before", runValidators: true }
+    );
     console.log(beforeUpdatedData);
     res.send("User Data Updated Successfully");
   }
