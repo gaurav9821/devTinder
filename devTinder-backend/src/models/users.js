@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     },
     phNo: {
       type: String,
-      required: true,
+      // required: true,
     },
     age: {
       type: Number,

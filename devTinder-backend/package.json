@@ -16,6 +16,7 @@
   "author": "Gaurav Chachada",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "devtinder-backend": "file:",
     "express": "^4.21.2",
     "mongoose": "^8.12.1",

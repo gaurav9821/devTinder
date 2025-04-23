@@ -3,6 +3,8 @@ const express = require("express");
 //ALWAYS CONNECT DB BEFORE STARTING THE SERVER
 const { connectDb } = require("./config/database");
 const { UserModel } = require("./models/users");
+const { validateSignUpData } = require("./utils/validations");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
@@ -255,8 +257,8 @@ app.use("/",(err,req,res,next)=>{
 })
 */
 
-// Convert every incoming JSON API request into JS object 
-app.use(express.json())
+// Convert every incoming JSON API request into JS object
+app.use(express.json());
 
 connectDb()
   .then((res, rej) => {
@@ -268,6 +270,8 @@ connectDb()
   .catch((err) => {
     console.log("DB Connection Failed " + err.message);
   });
+
+//ENTRY POINT OF
 
 app.post("/signup", async (req, res) => {
   try {
@@ -283,13 +287,52 @@ app.post("/signup", async (req, res) => {
     // creating a new instance of USerModel and we have passed  data inside it
     // const newUser = new UserModel(userObj);
 
-    console.log(req.body); 
-    //Adding data which we are adding in POstman while sending Request
-    const newUser = new UserModel(req.body);
-    await newUser.save();
+    // console.log(req.body);
+    //Adding data which we are adding in POstman while sending Request(BAD METHOD)
+    //const newUser = new UserModel(req.body);
+
+    //Validate Inputs
+    validateSignUpData(req);
+
+    //Extract only required data from the request body all other data should get ignored(GOOD METHOD)
+    const { firstName, lastName, emailId, password } = req.body;
+
+    //Encrypt Password
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+    const user = new UserModel({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+    await user.save();
     res.send("User Data Saved Successfully");
   } catch (err) {
     res.status(400).send("Error while saving Data :" + err.message);
+  }
+});
+
+// LOGIN API
+app.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+
+    const userDBData = await UserModel.findOne({ emailId: emailId });
+
+    if (!userDBData) {
+      throw new Error("Invalid Credentials");
+    }
+    const isValidUser = await bcrypt.compare(password, userDBData.password);
+
+    if (isValidUser) {
+      res.send("Login Successfull");
+    } else {
+      throw new Error("Invalid Credentials");
+    }
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
   }
 });
 
