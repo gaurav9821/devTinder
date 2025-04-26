@@ -4,6 +4,7 @@ const express = require("express");
 const { connectDb } = require("./config/database");
 const { UserModel } = require("./models/users");
 const { validateSignUpData } = require("./utils/validations");
+const validator = require("validator");
 const bcrypt = require("bcrypt");
 
 const app = express();
@@ -271,8 +272,8 @@ connectDb()
     console.log("DB Connection Failed " + err.message);
   });
 
-//ENTRY POINT OF
-
+//ENTRY POINT OF APP that is SIGNUP API
+/*
 app.post("/signup", async (req, res) => {
   try {
     // const userObj = {
@@ -313,7 +314,9 @@ app.post("/signup", async (req, res) => {
     res.status(400).send("Error while saving Data :" + err.message);
   }
 });
+*/
 
+/*
 // LOGIN API
 app.post("/login", async (req, res) => {
   try {
@@ -336,6 +339,8 @@ app.post("/login", async (req, res) => {
   }
 });
 
+*/
+
 // Array of objects which have emailId as userEemailId
 app.get("/usersByEmail", async (req, res) => {
   try {
@@ -351,7 +356,9 @@ app.get("/usersByEmail", async (req, res) => {
 app.get("/usersByEmailId", async (req, res) => {
   try {
     const userEmailId = req.body.emailId;
-    const userDetailsByEmail = await UserModel.findOne({ emailId: userEmailId });
+    const userDetailsByEmail = await UserModel.findOne({
+      emailId: userEmailId,
+    });
     res.send(userDetailsByEmail);
   } catch (err) {
     res.status(400).send("Cannot get Data :" + err.message);
@@ -369,19 +376,18 @@ app.get("/allUsers", async (req, res) => {
   }
 });
 
-app.delete("/deleteUser",async(req,res)=>{
+app.delete("/deleteUser", async (req, res) => {
   const userId = req.body.userId;
   console.log(userId);
-  try{
+  try {
     await UserModel.findByIdAndDelete(userId);
     res.send("User Deleted Successfully");
-  }
-  catch(err){
+  } catch (err) {
     res.status(400).send("Error while deleting user data" + err.message);
   }
-})
+});
 
-app.patch("/updateUser/:userId", async(req,res)=>{
+app.patch("/updateUser/:userId", async (req, res) => {
   const userId = req.params?.userId;
   const updatedToData = req.body;
   console.log(updatedToData);
@@ -422,5 +428,134 @@ app.patch("/updateUser/:userId", async(req,res)=>{
     console.log(err.message);
     res.status(400).send("Error while updating user data : " + err.message);
   }
-})
+});
+
+//SIGNUP API WITH VALIDATIONS AND JWT TOKEN
+
+app.post("/signup", async (req, res) => {
+  try {
+    //Validate the inputs coming from req body
+    validateSignUpData(req);
+
+    //Seprate whatever we need to store in DB from req body
+    const { firstName, lastName, emailId, password } = req.body;
+
+    //Encrypting Password for Security
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    //Create a new instance of User with all details coming from Req body
+    const user = new UserModel({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+
+    //Save the USer in DB
+    await user.save();
+
+    res.send("User Data Saved Successfully");
+  } catch (err) {
+    res.status(400).send("ERROR is : " + err.message);
+  }
+});
+
+// LOGIN API WITH JWT TOKEN AND COOKIES IMPLEMENTATION
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+const { userAuthMiddleware } = require("./middlewares/auth");
+
+app.use(cookieParser());
+
+app.post("/login", async (req, res) => {
+  try {
+    //Fetch emailId and Password from request body
+    const { emailId, password } = req.body;
+
+    //Validate email entered by User in request body
+    if (!validator.isEmail(emailId)) {
+      throw new Error("Invalid Credentials");
+    }
+    //Find the user in DB and return that user object using emailId
+    const userFromDb = await UserModel.findOne({ emailId });
+
+    //Validate if user exist in DB or not
+    if (!userFromDb) {
+      throw new Error("User not found");
+    }
+
+    //Validate the password entered by user and the hash password which we store in DB are same or not
+    // const isValidPassword = await bcrypt.compare(password, userFromDb.password);
+
+    //We can use helper method crated to get token as it uses many user related data so we have created
+    // user schema methods
+    const isValidPassword = await userFromDb.validatePassword(password);
+
+    if (isValidPassword) {
+      //Create a JWT Token
+      //1st argument is Payload : that is userId from DB
+      // 2nd argument is Secret Key
+      // 3rd argument is expiry date
+
+      // const token = await jwt.sign({ _id: userFromDb._id }, "Dev@Tinder#3265", {
+      //   expiresIn: "7d",
+      // });
+
+      //We can use helper method crated to get token as it uses many user related data so we have created
+      // user schema methods
+      const token = await userFromDb.getJWT();
+
+      //Attach The JWT Token inside cookie so that next time when any api called it will call using this cookie
+      //Cookie will expire in 8 hours
+      res.cookie("jwtToken", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+      });
+    } else {
+      throw new Error("Invalid Credentials");
+    }
+
+    res.send("Login Successfull");
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
+  }
+});
+
+app.get("/profile", userAuthMiddleware, async (req, res) => {
+  try {
+    //COmmented code below can be performed by userAuthMiddleware
+
+    // const { jwtToken } = req.cookies;
+
+    // if (!jwtToken) {
+    //   throw new Error("Token is Expired");
+    // }
+
+    // const decodedValue = await jwt.verify(jwtToken, "Dev@Tinder#3265");
+
+    // const userInDB = await UserModel.findById(decodedValue._id);
+
+    // if (!userInDB) {
+    //   throw new Error("User does not exist");
+    // }
+
+    const userInDB = req.user;
+
+    res.send(userInDB);
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
+  }
+});
+
+app.post("/sendConnectionRequest", userAuthMiddleware, async (req, res) => {
+  try {
+    const userInDB = req.user;
+
+    if (!userInDB) {
+      throw new Error("User not exist");
+    }
+    res.send(userInDB.firstName + " Has sended the COnnection Requests");
+  } catch (err) {
+    res.status(400).send("ERROR  : " + err.message);
+  }
+});
 
